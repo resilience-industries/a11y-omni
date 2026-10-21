@@ -9,11 +9,18 @@ on:
         required: true
         default: 'https://resilience-industries.github.io'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
 jobs:
   run-audit:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout Repository
@@ -34,9 +41,25 @@ jobs:
           TARGET="${{ github.event.inputs.target_url || 'https://resilience-industries.github.io' }}"
           node engine.js "$TARGET"
 
-      - name: Commit and Push Audit Report JSON
+      - name: Generate Accessible HTML Dashboard
+        run: |
+          node report-generator.js
+
+      - name: Commit and Push Reports
         run: |
           git config user.name "A11yOmni Bot"
           git config user.email "bot@a11yomni.local"
-          git add audit-report.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Update Audit Report for scanned target" && git push)
+          git add audit-report.json index.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Update Audit JSON and HTML Dashboard" && git push)
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
