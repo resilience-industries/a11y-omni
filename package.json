@@ -1,0 +1,15 @@
+{
+  "name": "a11y-omni",
+  "version": "1.0.0",
+  "description": "Autonomous Accessibility Engine and Remediation Suite",
+  "main": "engine.js",
+  "scripts": {
+    "scan": "node engine.js"
+  },
+  "dependencies": {
+    "axe-core": "^4.10.2",
+    "playwright": "^1.49.1"
+  },
+  "author": "Nitesh Kumar",
+  "license": "MIT"
+}
