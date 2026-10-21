@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-10-21T18:52:54.699Z",
+  "url": "https://resilience-industries.github.io",
+  "summary": {
+    "violationsCount": 0,
+    "passesCount": 45,
+    "incompleteCount": 1
+  },
+  "remediations": []
+}
