@@ -1,0 +1,42 @@
+name: A11yOmni Autonomous Engine
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target Website URL to Audit'
+        required: true
+        default: 'https://resilience-industries.github.io'
+
+jobs:
+  run-audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Engine Dependencies & Browsers
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Execute A11yOmni Deep Core Scan
+        run: |
+          TARGET="${{ github.event.inputs.target_url || 'https://resilience-industries.github.io' }}"
+          node engine.js "$TARGET"
+
+      - name: Commit and Push Audit Report JSON
+        run: |
+          git config user.name "A11yOmni Bot"
+          git config user.email "bot@a11yomni.local"
+          git add audit-report.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto: Update Audit Report for scanned target" && git push)
