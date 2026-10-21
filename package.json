@@ -1,12 +1,14 @@
 {
   "name": "a11y-omni",
-  "version": "1.0.0",
-  "description": "Autonomous Accessibility Engine and Remediation Suite",
+  "version": "1.1.0",
+  "description": "Autonomous Accessibility Engine, Zip Source Code Parser & Remediation Suite",
   "main": "engine.js",
   "scripts": {
-    "scan": "node engine.js"
+    "scan": "node engine.js",
+    "scan:zip": "node zip-engine.js"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "axe-core": "^4.10.2",
     "playwright": "^1.49.1"
   },
