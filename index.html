@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A11yOmni Audit Dashboard & VPAT 2.5 Report</title>
+  <title>A11yOmni Audit Dashboard & VPAT 2.5 ACR</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -42,13 +42,40 @@
     header {
       border-bottom: 2px solid #1e293b;
       padding-bottom: 20px;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
     }
     h1 { color: var(--primary); font-size: 2rem; margin-bottom: 8px; }
     .meta-info { color: var(--text-muted); font-size: 0.95rem; }
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .btn-action {
+      background: #1e293b;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-action:hover {
+      background: var(--primary);
+      color: #000;
+    }
+    .btn-action:focus {
+      outline: 3px solid #ffeb3b;
+      outline-offset: 3px;
+    }
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-bottom: 30px;
     }
@@ -61,7 +88,53 @@
     }
     .metric-value { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
     .metric-label { font-size: 0.9rem; color: var(--text-muted); }
-    
+
+    /* VPAT Table Styles */
+    .vpat-section {
+      background: var(--card-bg);
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 35px;
+      overflow-x: auto;
+    }
+    .vpat-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      margin-top: 15px;
+      font-size: 0.95rem;
+    }
+    .vpat-table th, .vpat-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #1e293b;
+      vertical-align: top;
+    }
+    .vpat-table thead th {
+      background: #0d1322;
+      color: var(--primary);
+      font-size: 0.95rem;
+      border-bottom: 2px solid var(--primary);
+    }
+    .wcag-tag {
+      font-size: 0.75rem;
+      background: #1e293b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent);
+      margin-left: 6px;
+    }
+    .vpat-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .badge-supports { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .badge-fails { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+    /* Issue Cards */
     .issue-card {
       background: var(--card-bg);
       border: 1px solid #1e293b;
@@ -102,7 +175,14 @@
     }
     a { color: var(--primary); text-decoration: underline; }
     a:focus { outline: 3px solid #ffeb3b; outline-offset: 2px; }
-    button:focus { outline: 3px solid #ffeb3b; }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding: 0; }
+      .action-bar, .skip-link { display: none !important; }
+      .vpat-section, .metric-card, .issue-card { border: 1px solid #ccc !important; background: #fff !important; color: #000 !important; }
+      h1, .metric-value, thead th { color: #000 !important; }
+      pre { background: #f1f5f9 !important; color: #000 !important; }
+    }
   </style>
 </head>
 <body>
@@ -111,7 +191,12 @@
   <header role="banner">
     <h1>A11yOmni Autonomous Audit Dashboard</h1>
     <p class="meta-info"><strong>Target Scanned:</strong> <a href="https://resilience-industries.github.io" target="_blank" rel="noopener">https://resilience-industries.github.io</a></p>
-    <p class="meta-info"><strong>Audit Generated:</strong> 10/21/2026, 7:22:38 PM</p>
+    <p class="meta-info"><strong>Audit Generated:</strong> 10/21/2026, 7:33:13 PM</p>
+    
+    <div class="action-bar" role="toolbar" aria-label="Export Actions">
+      <button class="btn-action" onclick="window.print()" aria-label="Print or Save Official Report as PDF">🖨️ Print / Save as PDF</button>
+      <button class="btn-action" onclick="downloadStandaloneReport()" aria-label="Download Standalone HTML Report File">📥 Download Standalone ACR (HTML)</button>
+    </div>
   </header>
 
   <main id="main-content" role="main">
@@ -134,16 +219,159 @@
       </div>
     </section>
 
+    <!-- Official VPAT 2.5 Section -->
+    <section class="vpat-section" aria-labelledby="vpat-heading">
+      <h2 id="vpat-heading">VPAT® Version 2.5 (Revised Section 508 & WCAG 2.2 Edition)</h2>
+      <p style="color: var(--text-muted); margin-top: 6px;">Accessibility Conformance Report (ACR) Table mapped from automated testing.</p>
+      
+      <table class="vpat-table" aria-label="VPAT 2.5 Conformance Report Table">
+        <thead>
+          <tr>
+            <th scope="col" style="width: 38%;">Criteria</th>
+            <th scope="col" style="width: 22%;">Conformance Level</th>
+            <th scope="col" style="width: 40%;">Remarks and Explanations</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+    <tr>
+      <th scope="row"><strong>1.1.1</strong> Non-text Content <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Non-text Content.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>1.3.1</strong> Info and Relationships <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Info and Relationships.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>1.3.5</strong> Identify Input Purpose <span class="wcag-tag">Level AA</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Identify Input Purpose.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>1.4.1</strong> Use of Color <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Use of Color.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>1.4.3</strong> Contrast (Minimum) <span class="wcag-tag">Level AA</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Contrast (Minimum).</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>1.4.6</strong> Contrast (Enhanced) <span class="wcag-tag">Level AAA</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Contrast (Enhanced).</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.1.1</strong> Keyboard Navigation <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Keyboard Navigation.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.1.2</strong> No Keyboard Trap <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for No Keyboard Trap.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.4.1</strong> Bypass Blocks (Skip Links) <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Bypass Blocks (Skip Links).</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.4.2</strong> Page Titled <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Page Titled.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.4.4</strong> Link Purpose (In Context) <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Link Purpose (In Context).</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.4.6</strong> Headings and Labels <span class="wcag-tag">Level AA</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Headings and Labels.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.4.7</strong> Focus Visible <span class="wcag-tag">Level AA</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Focus Visible.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.5.3</strong> Label in Name <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Label in Name.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>2.5.8</strong> Target Size (Minimum) <span class="wcag-tag">Level AA</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Target Size (Minimum).</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>3.1.1</strong> Language of Page <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Language of Page.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>4.1.1</strong> Parsing <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Parsing.</td>
+    </tr>
+  
+    <tr>
+      <th scope="row"><strong>4.1.2</strong> Name, Role, Value <span class="wcag-tag">Level A</span></th>
+      <td><span class="vpat-status badge-supports">Supports</span></td>
+      <td>Meets the automated requirements for Name, Role, Value.</td>
+    </tr>
+  
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Remediation Code Section -->
     <section aria-label="Remediation Details">
       <h2>Automated Remediation & Issues List</h2>
       <p style="color: var(--text-muted); margin-bottom: 20px;">Review the affected code snippets and corresponding WCAG 2.2 criteria below.</p>
       
     <div class="card success-card" role="region" aria-label="No Violations Found">
       <h3>🎉 No Automated Violations Found!</h3>
-      <p>The scanned target meets all tested WCAG 2.2 automated success criteria.</p>
+      <p>The scanned target meets all tested automated WCAG 2.2 success criteria.</p>
     </div>
   
     </section>
   </main>
+
+  <script>
+    function downloadStandaloneReport() {
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'VPAT_2.5_ACR_Report_' + new Date().toISOString().slice(0, 10) + '.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
 </body>
 </html>
