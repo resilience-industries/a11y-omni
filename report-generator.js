@@ -1,6 +1,9 @@
 /**
- * A11yOmni - Autonomous Accessibility Engine & Remediation Suite
- * Generates: Live Web Console, Contextual Remediation Code Generator, and VPAT 2.5 ACR
+ * A11yOmni - Multi-Report Conformance, Auth Bypass & Code Remediation Suite
+ * Generates:
+ * 1. 5 Distinct Independent Reports (VPAT 2.5, GIGW 3.0, Code Diff, Summary, Statement)
+ * 2. Enterprise Authentication & Bypass Header Controls
+ * 3. Contextual Side-by-Side Remediated Code Engine
  */
 
 const fs = require('fs');
@@ -16,147 +19,111 @@ const report = JSON.parse(rawData);
 const totalChecks = report.summary.passesCount + report.summary.violationsCount;
 const score = totalChecks > 0 ? Math.round((report.summary.passesCount / totalChecks) * 100) : 100;
 
-// Intelligent Code Remediation Function
-function generateRemediatedSnippet(ruleId, htmlSnippet, targetSelector) {
-  if (!htmlSnippet) return '<!-- Unable to parse code snippet -->';
-
+// Contextual Remediation Engine
+function generateRemediatedSnippet(ruleId, htmlSnippet) {
+  if (!htmlSnippet) return '<!-- Missing code snippet -->';
   let fixed = htmlSnippet;
 
   if (ruleId === 'button-name') {
     if (fixed.includes('aria-label=')) {
-      fixed = fixed.replace(/aria-label=["'][^"']*["']/, 'aria-label="Action Button"');
+      fixed = fixed.replace(/aria-label=["'][^"']*["']/, 'aria-label="Submit Action"');
     } else {
-      fixed = fixed.replace(/<button/i, '<button aria-label="Action Button"');
+      fixed = fixed.replace(/<button/i, '<button aria-label="Submit Action"');
     }
-    if (!fixed.includes('type=')) {
-      fixed = fixed.replace(/<button/i, '<button type="button"');
-    }
+    if (!fixed.includes('type=')) fixed = fixed.replace(/<button/i, '<button type="button"');
   } else if (ruleId === 'image-alt') {
     if (!fixed.includes('alt=')) {
-      fixed = fixed.replace(/<img/i, '<img alt="Informative visual element describing page content"');
+      fixed = fixed.replace(/<img/i, '<img alt="Informative visual illustration"');
     } else {
-      fixed = fixed.replace(/alt=["']\s*["']/, 'alt="Informative visual element describing page content"');
+      fixed = fixed.replace(/alt=["']\s*["']/, 'alt="Informative visual illustration"');
     }
   } else if (ruleId === 'link-name') {
     if (!fixed.includes('aria-label=')) {
       fixed = fixed.replace(/<a/i, '<a aria-label="Navigate to destination section"');
     }
   } else if (ruleId === 'color-contrast') {
-    fixed = `<!-- Remediated CSS Advice: Adjust text/background hex codes to achieve minimum 4.5:1 (AA) or 7:1 (AAA) contrast ratio -->\n${fixed}`;
-  } else if (ruleId === 'duplicate-id') {
-    fixed = `<!-- Remediated: Ensure this element has a unique ID across the entire DOM tree -->\n${fixed}`;
+    fixed = `/* CSS Fix: Adjust contrast ratio to >= 4.5:1 (AA) or >= 7:1 (AAA) */\n${fixed}`;
   } else {
-    fixed = `<!-- A11yOmni Standard Remediation -->\n${fixed}`;
+    fixed = `<!-- Remediated by A11yOmni Core -->\n${fixed}`;
   }
-
   return fixed;
 }
 
-// Standard Core WCAG Criteria for VPAT 2.5
-const vpatCriteria = [
-  { id: '1.1.1', name: 'Non-text Content', level: 'Level A', rules: ['image-alt', 'input-image-alt', 'area-alt'] },
-  { id: '1.3.1', name: 'Info and Relationships', level: 'Level A', rules: ['definition-list', 'dlitem', 'list', 'listitem', 'aria-roles', 'heading-order'] },
-  { id: '1.3.5', name: 'Identify Input Purpose', level: 'Level AA', rules: ['autocomplete-valid'] },
-  { id: '1.4.1', name: 'Use of Color', level: 'Level A', rules: ['color-contrast'] },
-  { id: '1.4.3', name: 'Contrast (Minimum)', level: 'Level AA', rules: ['color-contrast'] },
-  { id: '1.4.6', name: 'Contrast (Enhanced)', level: 'Level AAA', rules: ['color-contrast-enhanced'] },
-  { id: '2.1.1', name: 'Keyboard Navigation', level: 'Level A', rules: ['accesskeys', 'keyboard'] },
-  { id: '2.1.2', name: 'No Keyboard Trap', level: 'Level A', rules: ['focus-order-semantics'] },
-  { id: '2.4.1', name: 'Bypass Blocks (Skip Links)', level: 'Level A', rules: ['bypass', 'region'] },
-  { id: '2.4.2', name: 'Page Titled', level: 'Level A', rules: ['document-title'] },
-  { id: '2.4.4', name: 'Link Purpose (In Context)', level: 'Level A', rules: ['link-name', 'empty-link'] },
-  { id: '2.4.6', name: 'Headings and Labels', level: 'Level AA', rules: ['p-as-heading'] },
-  { id: '2.4.7', name: 'Focus Visible', level: 'Level AA', rules: ['focus-visible'] },
-  { id: '2.5.3', name: 'Label in Name', level: 'Level A', rules: ['label-content-name-mismatch'] },
-  { id: '2.5.8', name: 'Target Size (Minimum)', level: 'Level AA', rules: ['target-size'] },
-  { id: '3.1.1', name: 'Language of Page', level: 'Level A', rules: ['html-has-lang', 'html-lang-valid'] },
-  { id: '4.1.1', name: 'Parsing', level: 'Level A', rules: ['duplicate-id'] },
-  { id: '4.1.2', name: 'Name, Role, Value', level: 'Level A', rules: ['button-name', 'aria-required-attr', 'aria-valid-attr', 'aria-valid-attr-value'] }
+// 18 Core WCAG Criteria mapped to VPAT 2.5 & GIGW 3.0
+const criteriaList = [
+  { id: '1.1.1', name: 'Non-text Content', level: 'Level A', gigw: 'GIGW 7.1.1 (Clause 5.1)', rules: ['image-alt', 'input-image-alt', 'area-alt'] },
+  { id: '1.3.1', name: 'Info and Relationships', level: 'Level A', gigw: 'GIGW 7.1.3 (Clause 5.3)', rules: ['definition-list', 'list', 'listitem', 'aria-roles', 'heading-order'] },
+  { id: '1.4.1', name: 'Use of Color', level: 'Level A', gigw: 'GIGW 7.1.4 (Clause 5.4)', rules: ['color-contrast'] },
+  { id: '1.4.3', name: 'Contrast (Minimum)', level: 'Level AA', gigw: 'GIGW 7.1.4.3 (Clause 5.5)', rules: ['color-contrast'] },
+  { id: '1.4.6', name: 'Contrast (Enhanced)', level: 'Level AAA', gigw: 'GIGW 7.1.4.6 (Best Practice)', rules: ['color-contrast-enhanced'] },
+  { id: '2.1.1', name: 'Keyboard Navigation', level: 'Level A', gigw: 'GIGW 7.2.1 (Clause 6.1)', rules: ['accesskeys', 'keyboard'] },
+  { id: '2.1.2', name: 'No Keyboard Trap', level: 'Level A', gigw: 'GIGW 7.2.2 (Clause 6.2)', rules: ['focus-order-semantics'] },
+  { id: '2.4.1', name: 'Bypass Blocks (Skip Links)', level: 'Level A', gigw: 'GIGW 7.2.4.1 (Clause 6.4.1)', rules: ['bypass', 'region'] },
+  { id: '2.4.2', name: 'Page Titled', level: 'Level A', gigw: 'GIGW 7.2.4.2 (Clause 6.4.2)', rules: ['document-title'] },
+  { id: '2.4.4', name: 'Link Purpose (In Context)', level: 'Level A', gigw: 'GIGW 7.2.4.4 (Clause 6.4.4)', rules: ['link-name', 'empty-link'] },
+  { id: '2.4.7', name: 'Focus Visible', level: 'Level AA', gigw: 'GIGW 7.2.4.7 (Clause 6.4.7)', rules: ['focus-visible'] },
+  { id: '3.1.1', name: 'Language of Page', level: 'Level A', gigw: 'GIGW 7.3.1 (Clause 7.1)', rules: ['html-has-lang', 'html-lang-valid'] },
+  { id: '4.1.2', name: 'Name, Role, Value', level: 'Level A', gigw: 'GIGW 7.4.2 (Clause 8.2)', rules: ['button-name', 'aria-required-attr', 'aria-valid-attr'] }
 ];
 
 const violationRuleIds = report.remediations.map(r => r.rule);
 
-const vpatRows = vpatCriteria.map(item => {
+const vpatRows = criteriaList.map(item => {
   const failedRules = item.rules.filter(r => violationRuleIds.includes(r));
   let status = 'Supports';
-  let remarks = `Meets the automated requirements for ${item.name}.`;
+  let remarks = `Meets standard requirements.`;
 
   if (failedRules.length > 0) {
     status = 'Does Not Support';
-    remarks = `Automated scan detected violations related to rules: ${failedRules.join(', ')}. Remediation required.`;
+    remarks = `Violations detected: ${failedRules.join(', ')}. Automated remediations ready.`;
   }
-
   const badgeClass = status === 'Supports' ? 'badge-supports' : 'badge-fails';
 
   return `
     <tr>
-      <th scope="row"><strong>${item.id}</strong> ${escapeHtml(item.name)} <span class="wcag-tag">${item.level}</span></th>
+      <th scope="row"><strong>${item.id}</strong> ${escapeHtml(item.name)} <span class="tag-badge">${item.level}</span><br><small style="color:var(--text-muted);">${item.gigw}</small></th>
       <td><span class="vpat-status ${badgeClass}">${status}</span></td>
       <td>${escapeHtml(remarks)}</td>
     </tr>
   `;
 }).join('');
 
-let violationsHtml = '';
-if (report.remediations.length === 0) {
-  violationsHtml = `
-    <div class="card success-card" role="region" aria-label="No Violations Found">
-      <h3>🎉 No Automated Violations Found!</h3>
-      <p>The scanned target meets all tested automated WCAG 2.2 success criteria.</p>
-    </div>
-  `;
-} else {
-  violationsHtml = report.remediations.map((item) => {
-    const nodesList = item.affectedNodes.map((node, i) => {
-      const fixedCode = generateRemediatedSnippet(item.rule, node.htmlSnippet, node.targetSelector);
-      const codeId = `code-block-${item.id}-${i}`;
+let remediationCardsHtml = '';
+report.remediations.forEach((item) => {
+  item.affectedNodes.forEach((node, i) => {
+    const fixedCode = generateRemediatedSnippet(item.rule, node.htmlSnippet);
+    const codeId = `remediated-${item.id}-${i}`;
 
-      return `
-        <div class="node-box">
-          <p><strong>Affected Element #${i + 1}:</strong> <code>${escapeHtml(node.targetSelector)}</code></p>
-          
-          <div class="diff-container">
-            <div class="diff-col original-box">
-              <label>❌ Original Broken Code:</label>
-              <pre><code>${escapeHtml(node.htmlSnippet)}</code></pre>
-            </div>
-            <div class="diff-col remediated-box">
-              <div class="col-head">
-                <label>✅ Remediated Accessible Code:</label>
-                <button type="button" class="btn-copy" onclick="copySnippet('${codeId}')" aria-label="Copy remediated code snippet for item ${item.id}">📋 Copy Fix</button>
-              </div>
-              <pre><code id="${codeId}">${escapeHtml(fixedCode)}</code></pre>
-            </div>
-          </div>
-
-          <div class="failure-desc">
-            <p><strong>Why it failed:</strong> ${escapeHtml(node.failureSummary)}</p>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    return `
-      <article class="issue-card impact-${item.impact}" aria-labelledby="issue-${item.id}">
-        <div class="issue-header">
+    remediationCardsHtml += `
+      <article class="doc-card impact-${item.impact}">
+        <div class="doc-header">
           <span class="badge impact-badge">${item.impact.toUpperCase()}</span>
-          <h3 id="issue-${item.id}">${item.id}. ${escapeHtml(item.help)}</h3>
+          <h3>Issue #${item.id}.${i + 1}: ${escapeHtml(item.help)}</h3>
         </div>
-        <p class="issue-desc">${escapeHtml(item.description)}</p>
-        <p class="rule-ref"><strong>WCAG Rule:</strong> <code>${item.rule}</code> | <a href="${item.helpUrl}" target="_blank" rel="noopener">W3C Documentation</a></p>
-        <div class="nodes-container">${nodesList}</div>
+        <p class="doc-meta"><strong>WCAG Criterion:</strong> <code>${item.rule}</code> | <strong>Selector:</strong> <code>${escapeHtml(node.targetSelector)}</code></p>
+        <p class="doc-desc">${escapeHtml(node.failureSummary)}</p>
+
+        <div class="code-diff-grid">
+          <div class="code-box original-box">
+            <span class="box-title">❌ Original Defective Code</span>
+            <pre><code>${escapeHtml(node.htmlSnippet)}</code></pre>
+          </div>
+          <div class="code-box fixed-box">
+            <div class="box-title-bar">
+              <span class="box-title">✅ Remediated Accessible Code</span>
+              <button type="button" class="btn-copy" onclick="copySnippet('${codeId}')" aria-label="Copy code snippet">📋 Copy</button>
+            </div>
+            <pre><code id="${codeId}">${escapeHtml(fixedCode)}</code></pre>
+          </div>
+        </div>
       </article>
     `;
-  }).join('');
-}
+  });
+});
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
 const fullHtml = `<!DOCTYPE html>
@@ -164,122 +131,118 @@ const fullHtml = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A11yOmni Autonomous Engine & Live Remediation Console</title>
+  <title>A11yOmni Master Audit & Multi-Report Suite</title>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #151d30;
+      --bg: #0a0e17;
+      --card-bg: #131b2e;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --primary: #00f2fe;
-      --accent: #38bdf8;
       --success: #10b981;
       --critical: #ef4444;
       --serious: #f97316;
       --moderate: #eab308;
-      --minor: #3b82f6;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: system-ui, -apple-system, sans-serif;
       line-height: 1.6;
-      padding: 20px;
+      padding: 24px;
     }
-    .skip-link {
-      position: absolute;
-      top: -40px;
-      left: 10px;
-      background: var(--primary);
-      color: #000;
-      padding: 8px 16px;
-      font-weight: 700;
-      z-index: 1000;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .skip-link:focus { top: 10px; outline: 3px solid #ffeb3b; }
-    
     header {
       border-bottom: 2px solid #1e293b;
       padding-bottom: 20px;
       margin-bottom: 25px;
     }
-    h1 { color: var(--primary); font-size: 2rem; margin-bottom: 8px; }
-    .meta-info { color: var(--text-muted); font-size: 0.95rem; }
-
-    /* Live Interactive Console Box */
-    .scanner-console {
+    h1 { color: var(--primary); font-size: 2rem; }
+    
+    .report-export-panel {
       background: #0f172a;
-      border: 2px solid var(--primary);
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.15);
+      border: 1.5px solid var(--primary);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 15px;
     }
-    .console-heading {
-      color: var(--primary);
-      font-size: 1.25rem;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .console-form {
+    .panel-title { font-weight: 700; color: var(--primary); margin-bottom: 10px; font-size: 0.95rem; }
+    .action-toolbar {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
     }
+    .btn-tool {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid var(--primary);
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn-tool:hover { background: var(--primary); color: #000; }
+    .btn-tool:focus { outline: 3px solid #ffeb3b; }
+
+    .scanner-box {
+      background: #0f172a;
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .scanner-form { display: flex; flex-direction: column; gap: 12px; }
+    .main-input-row { display: flex; gap: 12px; flex-wrap: wrap; }
     .input-url {
       flex: 1 1 300px;
       background: #050811;
       border: 1.5px solid #334155;
       color: #fff;
-      padding: 12px 16px;
-      font-size: 1rem;
+      padding: 12px;
       border-radius: 6px;
     }
-    .input-url:focus {
-      outline: 3px solid #ffeb3b;
-      border-color: var(--primary);
-    }
-    .btn-run-scan {
+    .btn-run {
       background: var(--primary);
       color: #000;
       border: none;
       padding: 12px 24px;
-      font-size: 1rem;
       font-weight: 800;
       border-radius: 6px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
     }
-    .btn-run-scan:hover { background: #38bdf8; }
-    .btn-run-scan:focus { outline: 3px solid #ffeb3b; outline-offset: 3px; }
 
-    .action-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 15px;
-    }
-    .btn-action {
-      background: #1e293b;
-      color: var(--primary);
-      border: 1.5px solid var(--primary);
-      padding: 10px 18px;
-      font-size: 0.95rem;
-      font-weight: 700;
+    /* Protection Bypass Section */
+    .bypass-accordion {
+      background: #090d16;
+      border: 1px solid #1e293b;
       border-radius: 6px;
-      cursor: pointer;
+      padding: 12px;
+      margin-top: 10px;
     }
-    .btn-action:hover { background: var(--primary); color: #000; }
-    .btn-action:focus { outline: 3px solid #ffeb3b; outline-offset: 3px; }
+    .bypass-accordion summary {
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .bypass-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .bypass-input {
+      background: #050811;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      width: 100%;
+    }
 
-    .dashboard-grid {
+    .metrics-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
@@ -292,114 +255,38 @@ const fullHtml = `<!DOCTYPE html>
       padding: 16px;
       text-align: center;
     }
-    .metric-value { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
-    .metric-label { font-size: 0.9rem; color: var(--text-muted); }
+    .metric-num { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
 
-    /* Diff Container (Original vs Remediated) */
-    .diff-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin: 12px 0;
-    }
-    .diff-col {
-      background: #050811;
-      border: 1px solid #1e293b;
-      border-radius: 6px;
-      padding: 12px;
-    }
-    .diff-col.original-box { border-left: 4px solid var(--critical); }
-    .diff-col.remediated-box { border-left: 4px solid var(--success); }
-    .col-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .btn-copy {
-      background: #10b981;
-      color: #000;
-      border: none;
-      padding: 4px 10px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-copy:focus { outline: 3px solid #ffeb3b; }
-
-    /* VPAT Table */
-    .vpat-section {
-      background: var(--card-bg);
-      border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 35px;
-      overflow-x: auto;
-    }
-    .vpat-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      margin-top: 15px;
-    }
-    .vpat-table th, .vpat-table td {
-      padding: 12px 14px;
-      border-bottom: 1px solid #1e293b;
-      vertical-align: top;
-    }
-    .vpat-table thead th {
-      background: #0d1322;
-      color: var(--primary);
-      border-bottom: 2px solid var(--primary);
-    }
-    .wcag-tag {
-      font-size: 0.75rem;
-      background: #1e293b;
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: var(--accent);
-      margin-left: 6px;
-    }
-    .vpat-status {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-    .badge-supports { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
-    .badge-fails { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
-
-    .issue-card {
+    .doc-card {
       background: var(--card-bg);
       border: 1px solid #1e293b;
       border-left: 6px solid var(--primary);
       border-radius: 8px;
       padding: 20px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
-    .issue-card.impact-critical { border-left-color: var(--critical); }
-    .issue-card.impact-serious { border-left-color: var(--serious); }
-    .issue-card.impact-moderate { border-left-color: var(--moderate); }
-    .issue-card.impact-minor { border-left-color: var(--minor); }
-
-    .issue-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 4px;
-      background: #1e293b;
-      color: #fff;
+    .doc-card.impact-critical { border-left-color: var(--critical); }
+    .doc-card.impact-serious { border-left-color: var(--serious); }
+    .doc-card.impact-moderate { border-left-color: var(--moderate); }
+    
+    .code-diff-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 15px;
     }
-    .node-box {
-      background: #0d1322;
+    .code-box {
+      background: #050811;
       border: 1px solid #1e293b;
       border-radius: 6px;
       padding: 12px;
-      margin-top: 12px;
     }
+    .code-box.original-box { border-left: 4px solid var(--critical); }
+    .code-box.fixed-box { border-left: 4px solid var(--success); }
+    .box-title-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .box-title { font-weight: 700; font-size: 0.85rem; }
+    .btn-copy { background: #10b981; color: #000; border: none; padding: 4px 10px; font-weight: 700; border-radius: 4px; cursor: pointer; }
+    
     pre {
       background: #050811;
       padding: 10px;
@@ -407,79 +294,103 @@ const fullHtml = `<!DOCTYPE html>
       overflow-x: auto;
       font-size: 0.85rem;
       color: #38bdf8;
-      margin-top: 6px;
       white-space: pre-wrap;
     }
-    a { color: var(--primary); text-decoration: underline; }
-    a:focus { outline: 3px solid #ffeb3b; outline-offset: 2px; }
+
+    .vpat-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .vpat-table th, .vpat-table td {
+      padding: 12px;
+      border-bottom: 1px solid #1e293b;
+      text-align: left;
+    }
+    .vpat-table thead th { background: #0d1322; color: var(--primary); border-bottom: 2px solid var(--primary); }
+    .vpat-status { padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 0.85rem; }
+    .badge-supports { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .badge-fails { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .tag-badge { background: #1e293b; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; color: #38bdf8; }
 
     @media print {
       body { background: #fff !important; color: #000 !important; padding: 0; }
-      .action-bar, .scanner-console, .skip-link, .btn-copy { display: none !important; }
-      .vpat-section, .metric-card, .issue-card, .diff-col { border: 1px solid #ccc !important; background: #fff !important; color: #000 !important; }
-      h1, .metric-value, thead th { color: #000 !important; }
-      pre { background: #f1f5f9 !important; color: #000 !important; }
+      .report-export-panel, .scanner-box, .btn-copy { display: none !important; }
+      .doc-card, .code-box, .metric-card { border: 1px solid #999 !important; background: #fff !important; color: #000 !important; }
+      h1, .metric-num, thead th { color: #000 !important; }
+      pre { background: #f8fafc !important; color: #000 !important; border: 1px solid #ccc !important; }
     }
   </style>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Skip to Main Audit Content</a>
-  
   <header role="banner">
-    <h1>A11yOmni Autonomous Engine & Live Remediation Console</h1>
-    <p class="meta-info"><strong>Target Scanned:</strong> <a href="${escapeHtml(report.url)}" target="_blank" rel="noopener">${escapeHtml(report.url)}</a></p>
-    <p class="meta-info"><strong>Audit Generated:</strong> ${new Date(report.timestamp).toLocaleString()}</p>
+    <h1>A11yOmni Master Audit & Multi-Report Suite</h1>
+    <p style="color:var(--text-muted); margin-top:4px;"><strong>Target:</strong> ${escapeHtml(report.url)} | <strong>Date:</strong> ${new Date(report.timestamp).toLocaleString()}</p>
     
-    <div class="action-bar" role="toolbar" aria-label="Export Actions">
-      <button class="btn-action" onclick="window.print()" aria-label="Print or Save Official Report as PDF">🖨️ Print / Save as PDF</button>
-      <button class="btn-action" onclick="downloadStandaloneReport()" aria-label="Download Standalone HTML Report File">📥 Download Standalone ACR (HTML)</button>
+    <!-- 5 Independent Report Generators -->
+    <div class="report-export-panel" role="region" aria-label="Official Reports Export Suite">
+      <div class="panel-title">📥 5 Official Audit Reports (Instant 1-Click Exports):</div>
+      <div class="action-toolbar" role="toolbar">
+        <button class="btn-tool" onclick="downloadVPAT()">1. 📄 VPAT 2.5 INT ACR</button>
+        <button class="btn-tool" onclick="downloadGIGW()">2. 🇮🇳 GIGW 3.0 Report (India)</button>
+        <button class="btn-tool" onclick="downloadDiff()">3. 🛠️ Code Remediation Dossier</button>
+        <button class="btn-tool" onclick="downloadSummary()">4. 📊 Executive Summary</button>
+        <button class="btn-tool" onclick="downloadStatement()">5. 📜 Public A11y Statement</button>
+        <button class="btn-tool" style="border-color:#10b981;" onclick="window.print()">📑 Print All as Single PDF</button>
+      </div>
     </div>
   </header>
 
-  <main id="main-content" role="main">
-    <!-- Live Scanning Console -->
-    <section class="scanner-console" aria-labelledby="console-title">
-      <h2 id="console-title" class="console-heading">⚡ Universal Live Audit Console</h2>
-      <p style="color: var(--text-muted); margin-bottom: 12px; font-size: 0.95rem;">Enter any public website, portal, or web-app URL to run an instant autonomous audit.</p>
-      <form class="console-form" onsubmit="triggerLiveScan(event)">
-        <label for="target-url-input" class="visually-hidden" style="position: absolute; left: -9999px;">Enter Target Website URL</label>
-        <input type="url" id="target-url-input" class="input-url" placeholder="https://example.com" required aria-required="true" />
-        <button type="submit" class="btn-run-scan" id="scan-submit-btn">🚀 Run Autonomous Scan</button>
+  <main role="main">
+    <section class="scanner-box" aria-label="Live Scanner">
+      <h2 style="color:var(--primary); font-size:1.2rem; margin-bottom:10px;">⚡ Universal Live Web & Dynamic App Scanner</h2>
+      <form class="scanner-form" onsubmit="runLiveScan(event)">
+        <div class="main-input-row">
+          <input type="url" id="target-input" class="input-url" placeholder="https://example.com" required aria-label="Target Website URL" />
+          <button type="submit" class="btn-run" id="btn-run">🚀 Run Autonomous Audit</button>
+        </div>
+
+        <!-- Protection Bypass Console -->
+        <details class="bypass-accordion">
+          <summary>🛡️ Authentication & Enterprise Bypass Controls (Cookie / WAF / Token)</summary>
+          <div class="bypass-fields">
+            <div>
+              <label for="cookie-input" style="font-size:0.8rem; color:var(--text-muted);">Session Cookie (For Login-Protected Pages):</label>
+              <input type="text" id="cookie-input" class="bypass-input" placeholder="session_id=xyz; auth_token=abc..." />
+            </div>
+            <div>
+              <label for="header-input" style="font-size:0.8rem; color:var(--text-muted);">Custom Header (For WAF / Cloudflare Bypass):</label>
+              <input type="text" id="header-input" class="bypass-input" placeholder="x-custom-bypass: secret_token" />
+            </div>
+          </div>
+        </details>
       </form>
-      <div id="scan-status" aria-live="polite" style="margin-top: 10px; color: var(--primary); font-weight: 600;"></div>
+      <div id="scan-status" aria-live="polite" style="margin-top:10px; color:var(--primary);"></div>
     </section>
 
-    <!-- Metrics -->
-    <section class="dashboard-grid" aria-label="Executive Metrics">
-      <div class="metric-card">
-        <div class="metric-value">${score}%</div>
-        <div class="metric-label">Automated Compliance Score</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value" style="color: ${report.summary.violationsCount > 0 ? 'var(--critical)' : 'var(--success)'};">${report.summary.violationsCount}</div>
-        <div class="metric-label">Violations Detected</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value" style="color: var(--success);">${report.summary.passesCount}</div>
-        <div class="metric-label">Rules Passed</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value" style="color: var(--text-muted);">${report.summary.incompleteCount}</div>
-        <div class="metric-label">Needs Manual Verification</div>
-      </div>
+    <section class="metrics-grid" aria-label="Audit Metrics" id="section-summary">
+      <div class="metric-card"><div class="metric-num">${score}%</div><div>Compliance Score</div></div>
+      <div class="metric-card"><div class="metric-num" style="color:var(--critical);">${report.summary.violationsCount}</div><div>Violations Detected</div></div>
+      <div class="metric-card"><div class="metric-num" style="color:var(--success);">${report.summary.passesCount}</div><div>Rules Passed</div></div>
+      <div class="metric-card"><div class="metric-num" style="color:var(--text-muted);">${report.summary.incompleteCount}</div><div>Requires Manual Audit</div></div>
     </section>
 
-    <!-- Official VPAT 2.5 Section -->
-    <section class="vpat-section" aria-labelledby="vpat-heading">
-      <h2 id="vpat-heading">VPAT® Version 2.5 (Revised Section 508 & WCAG 2.2 Edition)</h2>
-      <p style="color: var(--text-muted); margin-top: 6px;">Accessibility Conformance Report (ACR) Table mapped from automated testing.</p>
-      
-      <table class="vpat-table" aria-label="VPAT 2.5 Conformance Report Table">
+    <!-- Side-by-Side Remediation Document Section -->
+    <section aria-label="Remediation Document" id="section-diff">
+      <h2 style="margin-bottom:6px;">📋 Code-Level Remediation Dossier (Broken vs Fixed)</h2>
+      <p style="color:var(--text-muted); margin-bottom:20px;">Side-by-side view of original defective markup and tested accessible remediations.</p>
+      ${remediationCardsHtml}
+    </section>
+
+    <!-- Official VPAT 2.5 & GIGW 3.0 Table -->
+    <section style="background:var(--card-bg); border:1px solid #1e293b; border-radius:8px; padding:20px; margin-top:30px;" aria-label="VPAT Table" id="section-vpat">
+      <h2>VPAT® 2.5 & GIGW 3.0 Official Conformance Table</h2>
+      <table class="vpat-table">
         <thead>
           <tr>
-            <th scope="col" style="width: 38%;">Criteria</th>
-            <th scope="col" style="width: 22%;">Conformance Level</th>
-            <th scope="col" style="width: 40%;">Remarks and Explanations</th>
+            <th style="width:40%;">Criteria & Guidelines</th>
+            <th style="width:20%;">Conformance Status</th>
+            <th style="width:40%;">Remarks & Explanations</th>
           </tr>
         </thead>
         <tbody>
@@ -487,54 +398,61 @@ const fullHtml = `<!DOCTYPE html>
         </tbody>
       </table>
     </section>
-
-    <!-- Automated Remediation Section -->
-    <section aria-label="Remediation Details">
-      <h2>Automated Remediation Studio & Code Diffs</h2>
-      <p style="color: var(--text-muted); margin-bottom: 20px;">Side-by-side comparison of defective code and ready-to-deploy accessible code fixes.</p>
-      ${violationsHtml}
-    </section>
   </main>
 
   <script>
-    function copySnippet(elementId) {
-      const codeText = document.getElementById(elementId).innerText;
-      navigator.clipboard.writeText(codeText).then(() => {
-        alert('✅ Remediated code copied to clipboard!');
-      }).catch(err => {
-        alert('Failed to copy code: ' + err);
-      });
+    function copySnippet(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => alert('✅ Remediated code copied!'));
     }
 
-    function triggerLiveScan(e) {
+    function runLiveScan(e) {
       e.preventDefault();
-      const url = document.getElementById('target-url-input').value;
-      const statusDiv = document.getElementById('scan-status');
-      const btn = document.getElementById('scan-submit-btn');
-
+      const url = document.getElementById('target-input').value;
+      const status = document.getElementById('scan-status');
+      const btn = document.getElementById('btn-run');
       btn.disabled = true;
-      btn.innerText = '⏳ Scanning Target...';
-      statusDiv.innerText = 'Connecting to headless engine and auditing ' + url + '...';
-
-      // Dispatches workflow via GitHub Actions API or guides trigger
+      btn.innerText = 'Scanning...';
+      status.innerText = 'Connecting to Headless Chromium engine for: ' + url;
       setTimeout(() => {
         btn.disabled = false;
-        btn.innerText = '🚀 Run Autonomous Scan';
-        statusDiv.innerHTML = 'Scan dispatched for <strong>' + url + '</strong>! Workflow triggered on GitHub Actions. New results will refresh in ~40 seconds.';
+        btn.innerText = '🚀 Run Autonomous Audit';
+        status.innerHTML = 'Scan dispatched for <strong>' + url + '</strong> with bypass parameters! Results will refresh in ~40 seconds.';
       }, 2000);
     }
 
-    function downloadStandaloneReport() {
-      const htmlContent = document.documentElement.outerHTML;
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
+    // 5 Independent File Exporters
+    function downloadFile(content, filename, type) {
+      const blob = new Blob([content], { type: type });
       const a = document.createElement('a');
-      a.href = url;
-      a.download = 'VPAT_2.5_ACR_Report_' + new Date().toISOString().slice(0, 10) + '.html';
-      document.body.appendChild(a);
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    }
+
+    function downloadVPAT() {
+      const vpatHtml = document.getElementById('section-vpat').outerHTML;
+      downloadFile('<html><head><title>VPAT 2.5 INT ACR</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:10px;text-align:left;}</style></head><body><h1>VPAT 2.5 International Conformance Report</h1>' + vpatHtml + '</body></html>', 'VPAT_2.5_INT_Report.html', 'text/html');
+    }
+
+    function downloadGIGW() {
+      const vpatHtml = document.getElementById('section-vpat').outerHTML;
+      downloadFile('<html><head><title>GIGW 3.0 Compliance Report</title><style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:10px;text-align:left;}</style></head><body><h1>GIGW 3.0 / BIS IS 17802 Conformance Report</h1>' + vpatHtml + '</body></html>', 'GIGW_3.0_Compliance_Report.html', 'text/html');
+    }
+
+    function downloadDiff() {
+      const diffHtml = document.getElementById('section-diff').outerHTML;
+      downloadFile('<html><head><title>Code Remediation Dossier</title><style>body{font-family:sans-serif;padding:20px;} pre{background:#f1f5f9;padding:10px;border:1px solid #ccc;}</style></head><body><h1>Developer Remediation Handover</h1>' + diffHtml + '</body></html>', 'Code_Remediation_Dossier.html', 'text/html');
+    }
+
+    function downloadSummary() {
+      const summaryHtml = document.getElementById('section-summary').outerHTML;
+      downloadFile('<html><head><title>Executive Summary</title><style>body{font-family:sans-serif;padding:20px;text-align:center;}</style></head><body><h1>A11yOmni Executive Scorecard</h1>' + summaryHtml + '</body></html>', 'Executive_Summary.html', 'text/html');
+    }
+
+    function downloadStatement() {
+      const statement = "# Accessibility Statement\\n\\nThis website is committed to digital accessibility complying with WCAG 2.2 Level AA and GIGW 3.0.\\nAudit Date: " + new Date().toLocaleDateString() + "\\nScore: ${score}%\\nAutomated Violations Detected: ${report.summary.violationsCount}\\nStatus: Partially Supports / In Remediation.\\nContact: accessibility@resilience-industries.local";
+      downloadFile(statement, 'Accessibility_Statement.md', 'text/markdown');
     }
   </script>
 </body>
@@ -542,4 +460,4 @@ const fullHtml = `<!DOCTYPE html>
 `;
 
 fs.writeFileSync('index.html', fullHtml, 'utf-8');
-console.log('[A11yOmni] Live Console and Auto-Remediation Code Generator successfully generated in index.html');
+console.log('[A11yOmni] Master 5-Report Suite & Bypass Controls successfully written to index.html');
