@@ -2,6 +2,7 @@
  * A11yOmni - Multi-Option Universal Accessibility Engine & Report Suite
  * Integrated with:
  * - Production Firebase Authentication Gate
+ * - Cloud Firestore Persistent User Audit History Engine
  * - Option 1: Live Web & Dynamic App URL Scanner
  * - Option 2: In-Browser Source Code (.ZIP) Parser
  * - Option 3: Mobile Apps (.APK / Android XML Layout) Parser
@@ -254,6 +255,42 @@ const fullHtml = `<!DOCTYPE html>
     .btn-tool:hover { background: var(--primary); color: #000; }
     .btn-tool:focus { outline: 3px solid #ffeb3b; }
 
+    /* Firestore Audit History Timeline Section */
+    .history-drawer {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 25px;
+    }
+    .history-drawer summary {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .history-list {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .history-item {
+      background: #060913;
+      border-left: 4px solid var(--primary);
+      padding: 10px 14px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .history-meta { font-size: 0.85rem; color: var(--text-muted); }
+    .history-score { font-weight: 800; font-size: 1rem; color: var(--success); }
+
     .scanner-box {
       background: #0f172a;
       border: 2px solid var(--primary);
@@ -413,6 +450,14 @@ const fullHtml = `<!DOCTYPE html>
     </header>
 
     <main role="main">
+      <!-- Persistent Cloud Firestore Audit History Drawer -->
+      <details class="history-drawer" id="history-drawer">
+        <summary>📜 Your Cloud Audit History (<span id="history-count">0</span> Saved Audits)</summary>
+        <div class="history-list" id="history-container" aria-live="polite">
+          <p style="color:var(--text-muted); font-size:0.85rem;">Loading audit records from Firestore...</p>
+        </div>
+      </details>
+
       <section class="scanner-box" aria-label="Universal Scanner Console">
         <div class="tab-list" role="tablist" aria-label="Scanning Modes">
           <button class="tab-btn" id="tab-web" role="tab" aria-selected="true" aria-controls="panel-web" onclick="switchScanTab('web')">🌐 Option 1: Live Web URL</button>
@@ -539,6 +584,8 @@ const fullHtml = `<!DOCTYPE html>
       }
     }
     const auth = firebase.auth();
+    const db = firebase.firestore();
+    let currentUser = null;
 
     // Session State Listener
     auth.onAuthStateChanged(user => {
@@ -547,14 +594,70 @@ const fullHtml = `<!DOCTYPE html>
       const userBadge = document.getElementById('user-display-name');
 
       if (user) {
+        currentUser = user;
         authGate.style.display = 'none';
         appContainer.classList.remove('app-locked');
         userBadge.innerText = user.displayName || user.email;
+        loadUserAuditHistory(user.uid);
       } else {
+        currentUser = null;
         authGate.style.display = 'block';
         appContainer.classList.add('app-locked');
       }
     });
+
+    // Cloud Firestore Audit History Logger
+    async function logAuditToFirestore(targetName, modality, scoreVal, violationsVal) {
+      if (!currentUser) return;
+      try {
+        await db.collection('audits').add({
+          userId: currentUser.uid,
+          userEmail: currentUser.email,
+          target: targetName,
+          modality: modality,
+          score: scoreVal,
+          violations: violationsVal,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        loadUserAuditHistory(currentUser.uid);
+      } catch (err) {
+        console.warn('[A11yOmni] Firestore history record deferred:', err.message);
+      }
+    }
+
+    // Load History Records
+    async function loadUserAuditHistory(uid) {
+      const container = document.getElementById('history-container');
+      const countLabel = document.getElementById('history-count');
+      try {
+        const snapshot = await db.collection('audits')
+          .where('userId', '==', uid)
+          .orderBy('timestamp', 'desc')
+          .limit(10)
+          .get();
+
+        if (snapshot.empty) {
+          container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">No saved audit records found. Run an audit to log your history.</p>';
+          countLabel.innerText = '0';
+          return;
+        }
+
+        countLabel.innerText = snapshot.size;
+        let html = '';
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Just now';
+          html += '<div class="history-item">' +
+            '<div><strong>' + escapeXml(data.target) + '</strong> <span class="tag-badge">' + escapeXml(data.modality) + '</span>' +
+            '<div class="history-meta">Audited on: ' + dateStr + ' | Violations: ' + data.violations + '</div></div>' +
+            '<div class="history-score">' + data.score + '%</div>' +
+          '</div>';
+        });
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">History will sync once first audit completes.</p>';
+      }
+    }
 
     function handleGoogleSignIn() {
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -594,6 +697,7 @@ const fullHtml = `<!DOCTYPE html>
         btn.disabled = false;
         btn.innerText = '🚀 Run Web Audit';
         status.innerHTML = 'Scan dispatched for <strong>' + url + '</strong>! Triggered on GitHub Actions. Results refresh in ~40 seconds.';
+        logAuditToFirestore(url, 'Live Web URL', ${score}, ${report.summary.violationsCount});
       }, 2000);
     }
 
@@ -676,6 +780,7 @@ const fullHtml = `<!DOCTYPE html>
         }
 
         status.innerHTML = '✅ In-Memory Audit Complete for <strong>' + file.name + '</strong>!';
+        logAuditToFirestore(file.name, 'Source Code ZIP', newScore, totalViolations);
       } catch (err) {
         status.innerText = 'Audit failed: ' + err.message;
       } finally {
@@ -751,6 +856,7 @@ const fullHtml = `<!DOCTYPE html>
         }
 
         status.innerHTML = '✅ Mobile App Audit Complete for <strong>' + file.name + '</strong>! Detected ' + violations.length + ' touch & TalkBack issues.';
+        logAuditToFirestore(file.name, 'Mobile APK / XML', newScore, violations.length);
       } catch (err) {
         status.innerText = 'Mobile parse error: ' + err.message;
       } finally {
@@ -902,6 +1008,7 @@ const fullHtml = `<!DOCTYPE html>
         }
 
         status.innerHTML = '✅ Document Audit Complete for <strong>' + file.name + '</strong>! Identified ' + violations.length + ' compliance issues against PDF/UA & WCAG.';
+        logAuditToFirestore(file.name, 'Document (PDF/Office)', newScore, violations.length);
       } catch (err) {
         status.innerText = 'Document parse error: ' + err.message;
       } finally {
@@ -934,7 +1041,6 @@ const fullHtml = `<!DOCTYPE html>
 
         if (fname.endsWith('.vtt') || fname.endsWith('.srt')) {
           const text = await file.text();
-          // WebVTT Syntax & Timing cue check
           if (fname.endsWith('.vtt') && !text.startsWith('WEBVTT')) {
             violations.push({
               file: file.name,
@@ -963,7 +1069,6 @@ const fullHtml = `<!DOCTYPE html>
           const parser = new DOMParser();
           const doc = parser.parseFromString(text, 'text/html');
 
-          // Check all <video> elements for captions track
           const videos = doc.querySelectorAll('video');
           videos.forEach((vid, i) => {
             const captionTrack = vid.querySelector('track[kind="captions"], track[kind="subtitles"]');
@@ -993,7 +1098,6 @@ const fullHtml = `<!DOCTYPE html>
             }
           });
 
-          // Check all <audio> elements for text transcript link
           const audios = doc.querySelectorAll('audio');
           audios.forEach((aud, i) => {
             const nextElem = aud.nextElementSibling;
@@ -1011,7 +1115,6 @@ const fullHtml = `<!DOCTYPE html>
             }
           });
         } else if (fname.endsWith('.mp4') || fname.endsWith('.mp3') || fname.endsWith('.webm')) {
-          // Direct binary media uploaded - provide complete accessible HTML5 wrapper
           violations.push({
             file: file.name,
             impact: 'serious',
@@ -1052,6 +1155,7 @@ const fullHtml = `<!DOCTYPE html>
         }
 
         status.innerHTML = '✅ Multimedia Audit Complete for <strong>' + file.name + '</strong>! Identified ' + violations.length + ' issues against WCAG 1.2 Time-based Media.';
+        logAuditToFirestore(file.name, 'Multimedia (Audio/Video)', newScore, violations.length);
       } catch (err) {
         status.innerText = 'Media parse error: ' + err.message;
       } finally {
@@ -1102,4 +1206,4 @@ const fullHtml = `<!DOCTYPE html>
 `;
 
 fs.writeFileSync('index.html', fullHtml, 'utf-8');
-console.log('[A11yOmni] Option 5 Multimedia & Captions Parser successfully integrated into index.html');
+console.log('[A11yOmni] Firestore Audit History Logger successfully written to index.html');
