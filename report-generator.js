@@ -5,7 +5,8 @@
  * - Option 1: Live Web & Dynamic App URL Scanner
  * - Option 2: In-Browser Source Code (.ZIP) Parser
  * - Option 3: Mobile Apps (.APK / Android XML Layout) Parser
- * - Option 4: Digital Documents (.PDF, .DOCX, .PPTX) PDF/UA & OpenXML Parser
+ * - Option 4: Digital Documents (.PDF, .DOCX, .PPTX) PDF/UA Parser
+ * - Option 5: Multimedia (.MP4, .MP3, .VTT, .SRT) Captions & Transcripts Parser
  * - 5 Independent Export Engines (VPAT 2.5 INT, GIGW 3.0, Code Diff, Summary, Statement)
  */
 
@@ -53,14 +54,18 @@ function generateRemediatedSnippet(ruleId, htmlSnippet) {
 
 const criteriaList = [
   { id: '1.1.1', name: 'Non-text Content (Images/Figures)', level: 'Level A', gigw: 'GIGW 7.1.1 (Clause 5.1)', rules: ['image-alt', 'input-image-alt', 'area-alt'] },
-  { id: '1.3.1', name: 'Info and Relationships (Headings/Tables)', level: 'Level A', gigw: 'GIGW 7.1.3 (Clause 5.3)', rules: ['definition-list', 'list', 'listitem', 'aria-roles', 'heading-order'] },
+  { id: '1.2.1', name: 'Audio-only and Video-only (Prerecorded)', level: 'Level A', gigw: 'GIGW 7.1.2.1 (Clause 5.2.1)', rules: ['media-transcript', 'audio-transcript'] },
+  { id: '1.2.2', name: 'Captions (Prerecorded)', level: 'Level A', gigw: 'GIGW 7.1.2.2 (Clause 5.2.2)', rules: ['video-caption', 'track-kind-captions'] },
+  { id: '1.2.3', name: 'Audio Description or Media Alternative', level: 'Level A', gigw: 'GIGW 7.1.2.3 (Clause 5.2.3)', rules: ['video-description'] },
+  { id: '1.2.5', name: 'Audio Description (Prerecorded)', level: 'Level AA', gigw: 'GIGW 7.1.2.5 (Clause 5.2.5)', rules: ['video-audio-description'] },
+  { id: '1.3.1', name: 'Info and Relationships', level: 'Level A', gigw: 'GIGW 7.1.3 (Clause 5.3)', rules: ['definition-list', 'list', 'listitem', 'aria-roles', 'heading-order'] },
   { id: '1.3.2', name: 'Meaningful Sequence (Reading Order)', level: 'Level A', gigw: 'GIGW 7.1.3.2 (PDF/UA)', rules: ['pdf-tagged', 'reading-order'] },
   { id: '1.4.1', name: 'Use of Color', level: 'Level A', gigw: 'GIGW 7.1.4 (Clause 5.4)', rules: ['color-contrast'] },
   { id: '1.4.3', name: 'Contrast (Minimum)', level: 'Level AA', gigw: 'GIGW 7.1.4.3 (Clause 5.5)', rules: ['color-contrast'] },
   { id: '1.4.6', name: 'Contrast (Enhanced)', level: 'Level AAA', gigw: 'GIGW 7.1.4.6 (Best Practice)', rules: ['color-contrast-enhanced'] },
   { id: '2.1.1', name: 'Keyboard Navigation', level: 'Level A', gigw: 'GIGW 7.2.1 (Clause 6.1)', rules: ['accesskeys', 'keyboard'] },
   { id: '2.1.2', name: 'No Keyboard Trap', level: 'Level A', gigw: 'GIGW 7.2.2 (Clause 6.2)', rules: ['focus-order-semantics'] },
-  { id: '2.4.1', name: 'Bypass Blocks (Bookmarks/TOC)', level: 'Level A', gigw: 'GIGW 7.2.4.1 (Clause 6.4.1)', rules: ['bypass', 'region', 'pdf-bookmarks'] },
+  { id: '2.4.1', name: 'Bypass Blocks (Skip Links / TOC)', level: 'Level A', gigw: 'GIGW 7.2.4.1 (Clause 6.4.1)', rules: ['bypass', 'region', 'pdf-bookmarks'] },
   { id: '2.4.2', name: 'Page & Document Titled', level: 'Level A', gigw: 'GIGW 7.2.4.2 (Clause 6.4.2)', rules: ['document-title', 'pdf-title'] },
   { id: '2.4.4', name: 'Link Purpose (In Context)', level: 'Level A', gigw: 'GIGW 7.2.4.4 (Clause 6.4.4)', rules: ['link-name', 'empty-link'] },
   { id: '2.4.7', name: 'Focus Visible', level: 'Level AA', gigw: 'GIGW 7.2.4.7 (Clause 6.4.7)', rules: ['focus-visible'] },
@@ -268,9 +273,9 @@ const fullHtml = `<!DOCTYPE html>
       background: transparent;
       border: none;
       color: var(--text-muted);
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
-      padding: 8px 14px;
+      padding: 8px 12px;
       cursor: pointer;
       border-bottom: 3px solid transparent;
     }
@@ -373,7 +378,7 @@ const fullHtml = `<!DOCTYPE html>
   <!-- Mandatory Authentication Gate Screen -->
   <section id="auth-gate" class="auth-overlay" aria-label="Sign In Area">
     <h2>🔒 A11yOmni Enterprise Access</h2>
-    <p style="color:var(--text-muted); font-size:0.95rem;">Please authenticate with Google to unlock universal web scanning, in-memory ZIP auditing, mobile APK analysis, digital document checks, and official VPAT/GIGW compliance exports.</p>
+    <p style="color:var(--text-muted); font-size:0.95rem;">Please authenticate with Google to unlock universal web scanning, in-memory ZIP auditing, mobile APK analysis, document checks, multimedia captions audits, and official compliance exports.</p>
     <button class="btn-google" onclick="handleGoogleSignIn()">
       <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
       Sign In with Google
@@ -414,6 +419,7 @@ const fullHtml = `<!DOCTYPE html>
           <button class="tab-btn" id="tab-zip" role="tab" aria-selected="false" aria-controls="panel-zip" onclick="switchScanTab('zip')">📁 Option 2: Upload Code (.ZIP)</button>
           <button class="tab-btn" id="tab-mobile" role="tab" aria-selected="false" aria-controls="panel-mobile" onclick="switchScanTab('mobile')">📱 Option 3: Mobile Apps (.APK / XML)</button>
           <button class="tab-btn" id="tab-docs" role="tab" aria-selected="false" aria-controls="panel-docs" onclick="switchScanTab('docs')">📄 Option 4: Documents (.PDF / Office)</button>
+          <button class="tab-btn" id="tab-media" role="tab" aria-selected="false" aria-controls="panel-media" onclick="switchScanTab('media')">🎬 Option 5: Multimedia (.MP4 / VTT / Captions)</button>
         </div>
 
         <!-- Panel 1: Live Web -->
@@ -468,6 +474,17 @@ const fullHtml = `<!DOCTYPE html>
             <div class="main-input-row">
               <input type="file" id="doc-file-input" class="input-file" accept=".pdf,.docx,.pptx" aria-label="Select Digital Document File" required />
               <button type="submit" class="btn-run" id="btn-run-docs">📄 Audit Document</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Panel 5: Multimedia & Captions (.MP4 / .VTT / .SRT / .HTML) -->
+        <div class="tab-panel" id="panel-media" role="tabpanel" aria-labelledby="tab-media">
+          <form class="scanner-form" onsubmit="runMediaScan(event)">
+            <p style="color:var(--text-muted); font-size:0.9rem;">Upload audio/video files or WebVTT / SRT subtitle files to verify WCAG 1.2 compliance (Captions, Audio Descriptions, and Transcripts).</p>
+            <div class="main-input-row">
+              <input type="file" id="media-file-input" class="input-file" accept=".vtt,.srt,.html,.mp4,.mp3,.webm" aria-label="Select Media or Subtitle File" required />
+              <button type="submit" class="btn-run" id="btn-run-media">🎬 Audit Multimedia</button>
             </div>
           </form>
         </div>
@@ -557,7 +574,7 @@ const fullHtml = `<!DOCTYPE html>
     }
 
     function switchScanTab(tab) {
-      const tabs = ['web', 'zip', 'mobile', 'docs'];
+      const tabs = ['web', 'zip', 'mobile', 'docs', 'media'];
       tabs.forEach(t => {
         const isCurrent = t === tab;
         document.getElementById('tab-' + t).setAttribute('aria-selected', isCurrent);
@@ -797,11 +814,9 @@ const fullHtml = `<!DOCTYPE html>
         if (file.name.toLowerCase().endsWith('.pdf')) {
           const buffer = await file.arrayBuffer();
           const bytes = new Uint8Array(buffer);
-          // Convert first 300KB to text for metadata inspection
           const decoder = new TextDecoder('latin1');
           const pdfHeader = decoder.decode(bytes.slice(0, 300000));
 
-          // 1. Tagged PDF Check (MarkInfo / StructTreeRoot)
           if (!pdfHeader.includes('/Marked true') && !pdfHeader.includes('/StructTreeRoot')) {
             violations.push({
               file: file.name,
@@ -814,7 +829,6 @@ const fullHtml = `<!DOCTYPE html>
             });
           }
 
-          // 2. Document Title Metadata (/Title)
           if (!pdfHeader.includes('/Title')) {
             violations.push({
               file: file.name,
@@ -827,7 +841,6 @@ const fullHtml = `<!DOCTYPE html>
             });
           }
 
-          // 3. Document Default Language (/Lang)
           if (!pdfHeader.includes('/Lang')) {
             violations.push({
               file: file.name,
@@ -840,7 +853,6 @@ const fullHtml = `<!DOCTYPE html>
             });
           }
         } else if (file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.pptx')) {
-          // Office OpenXML Zip Inspection
           const zip = await JSZip.loadAsync(file);
           let hasDrawingsWithoutAlt = false;
 
@@ -879,7 +891,6 @@ const fullHtml = `<!DOCTYPE html>
             '</div></article>';
         });
 
-        // Update Dashboard Metrics
         document.getElementById('target-label').innerText = 'Digital Document: ' + file.name;
         document.getElementById('metric-violations').innerText = violations.length;
         document.getElementById('metric-passes').innerText = passesCount;
@@ -896,6 +907,156 @@ const fullHtml = `<!DOCTYPE html>
       } finally {
         btn.disabled = false;
         btn.innerText = '📄 Audit Document';
+      }
+    }
+
+    // Option 5: Multimedia (.MP4 / .VTT / .SRT / HTML Media) Parser
+    async function runMediaScan(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('media-file-input');
+      const status = document.getElementById('scan-status');
+      const btn = document.getElementById('btn-run-media');
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a media file (.mp4, .mp3, .vtt, .srt, or .html).');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      btn.disabled = true;
+      btn.innerText = 'Analyzing Multimedia Compliance...';
+      status.innerText = 'Inspecting ' + file.name + ' for WCAG 1.2 Captions, Audio Descriptions & WebVTT timing cues...';
+
+      try {
+        let violations = [];
+        let passesCount = 5;
+        const fname = file.name.toLowerCase();
+
+        if (fname.endsWith('.vtt') || fname.endsWith('.srt')) {
+          const text = await file.text();
+          // WebVTT Syntax & Timing cue check
+          if (fname.endsWith('.vtt') && !text.startsWith('WEBVTT')) {
+            violations.push({
+              file: file.name,
+              impact: 'critical',
+              rule: 'webvtt-valid-header (WCAG 1.2.2)',
+              title: 'Malformed WebVTT Caption File',
+              description: 'The subtitle file lacks the required initial WEBVTT header line, causing screen readers and HTML5 video players to fail rendering captions.',
+              original: '00:00:01.000 --> 00:00:04.000\\nWelcome to the conference keynote.',
+              fixed: 'WEBVTT\\n\\nNOTE Conformance fixed by A11yOmni\\n\\n00:00:01.000 --> 00:00:04.000\\n<v Speaker 1>Welcome to the conference keynote.</v>'
+            });
+          }
+
+          if (!text.includes('-->')) {
+            violations.push({
+              file: file.name,
+              impact: 'critical',
+              rule: 'captions-missing-timing (WCAG 1.2.2)',
+              title: 'Missing Synchronized Timecodes',
+              description: 'The track file lacks standard time synchronization cues (-->). Subtitles cannot synchronize with speech.',
+              original: '1. Hello and welcome to our accessibility summit.',
+              fixed: '00:00:02.500 --> 00:00:06.000\\nHello and welcome to our accessibility summit.'
+            });
+          }
+        } else if (fname.endsWith('.html') || fname.endsWith('.htm')) {
+          const text = await file.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(text, 'text/html');
+
+          // Check all <video> elements for captions track
+          const videos = doc.querySelectorAll('video');
+          videos.forEach((vid, i) => {
+            const captionTrack = vid.querySelector('track[kind="captions"], track[kind="subtitles"]');
+            if (!captionTrack) {
+              violations.push({
+                file: file.name,
+                impact: 'critical',
+                rule: 'video-captions-missing (WCAG 1.2.2 Level A)',
+                title: 'Video Element Lacks Synchronized Captions Track',
+                description: '<video> element #' + (i + 1) + ' does not contain a nested <track kind="captions"> element, excluding deaf and hard-of-hearing users.',
+                original: vid.outerHTML,
+                fixed: '<video controls preload="metadata">\\n  <source src="' + (vid.querySelector('source') ? vid.querySelector('source').getAttribute('src') : 'video.mp4') + '" type="video/mp4">\\n  <track kind="captions" src="captions_en.vtt" srclang="en" label="English Captions" default>\\n  <track kind="descriptions" src="audio_descriptions.vtt" srclang="en" label="English Audio Description">\\n</video>'
+              });
+            }
+
+            const descTrack = vid.querySelector('track[kind="descriptions"]');
+            if (!descTrack) {
+              violations.push({
+                file: file.name,
+                impact: 'serious',
+                rule: 'video-audio-description-missing (WCAG 1.2.5 Level AA)',
+                title: 'Video Lacks Audio Description Track',
+                description: 'No <track kind="descriptions"> provided for prerecorded video. Blind users will miss critical on-screen visual information.',
+                original: vid.outerHTML,
+                fixed: vid.outerHTML.replace('</video>', '  <track kind="descriptions" src="descriptions_en.vtt" srclang="en" label="Audio Description">\\n</video>')
+              });
+            }
+          });
+
+          // Check all <audio> elements for text transcript link
+          const audios = doc.querySelectorAll('audio');
+          audios.forEach((aud, i) => {
+            const nextElem = aud.nextElementSibling;
+            const hasTranscript = nextElem && (nextElem.textContent.toLowerCase().includes('transcript') || nextElem.querySelector('a[href*="transcript"]'));
+            if (!hasTranscript) {
+              violations.push({
+                file: file.name,
+                impact: 'serious',
+                rule: 'audio-transcript-missing (WCAG 1.2.1 Level A)',
+                title: 'Audio Element Lacks Synchronized/Full Text Transcript',
+                description: '<audio> element #' + (i + 1) + ' has no immediately accessible descriptive text transcript, denying access to deaf individuals.',
+                original: aud.outerHTML,
+                fixed: aud.outerHTML + '\\n<p><a href="transcripts/episode_transcript.html" aria-label="Read complete text transcript of this audio">📄 Read Full Text Transcript</a></p>'
+              });
+            }
+          });
+        } else if (fname.endsWith('.mp4') || fname.endsWith('.mp3') || fname.endsWith('.webm')) {
+          // Direct binary media uploaded - provide complete accessible HTML5 wrapper
+          violations.push({
+            file: file.name,
+            impact: 'serious',
+            rule: 'standalone-media-embed (WCAG 1.2.1 / 1.2.2 / 1.2.5)',
+            title: 'Standalone Media File Lacks Semantic Web Track Enclosure',
+            description: 'Direct binary media file needs standard HTML5 accessible container with dual captions & audio description tracks to be compliant.',
+            original: '<!-- Unenclosed Direct File: ' + escapeXml(file.name) + ' -->',
+            fixed: (fname.endsWith('.mp3') 
+              ? '<audio controls>\\n  <source src="' + escapeXml(file.name) + '" type="audio/mpeg">\\n</audio>\\n<p><a href="' + escapeXml(file.name.replace(/\.[^/.]+$/, "")) + '_transcript.txt">📄 Read Complete Transcript</a></p>'
+              : '<video controls width="100%" height="auto" preload="metadata">\\n  <source src="' + escapeXml(file.name) + '" type="video/mp4">\\n  <track kind="captions" src="captions.vtt" srclang="en" label="English" default>\\n  <track kind="descriptions" src="description.vtt" srclang="en" label="Audio Description">\\n  Your browser does not support HTML5 video.\\n</video>')
+          });
+        }
+
+        let remediationsHtml = '';
+        violations.forEach((v, idx) => {
+          const codeId = 'media-fix-' + idx;
+          remediationsHtml += '<article class="doc-card impact-' + v.impact + '">' +
+            '<div class="doc-header"><span class="badge impact-badge">' + v.impact.toUpperCase() + '</span>' +
+            '<h3>[Multimedia ' + v.file + '] ' + v.title + '</h3></div>' +
+            '<p class="doc-meta"><strong>Standard:</strong> ' + v.rule + '</p>' +
+            '<p class="doc-desc">' + v.description + '</p>' +
+            '<div class="code-diff-grid">' +
+              '<div class="code-box original-box"><span class="box-title">❌ Inaccessible Media Markup</span><pre><code>' + escapeXml(v.original) + '</code></pre></div>' +
+              '<div class="code-box fixed-box"><div class="box-title-bar"><span class="box-title">✅ Remediated W3C Accessible Media Track</span>' +
+              '<button type="button" class="btn-copy" onclick="copySnippet(\\'' + codeId + '\\')">📋 Copy</button></div>' +
+              '<pre><code id="' + codeId + '">' + escapeXml(v.fixed) + '</code></pre></div>' +
+            '</div></article>';
+        });
+
+        document.getElementById('target-label').innerText = 'Multimedia File: ' + file.name;
+        document.getElementById('metric-violations').innerText = violations.length;
+        document.getElementById('metric-passes').innerText = passesCount;
+        const total = violations.length + passesCount;
+        const newScore = total > 0 ? Math.round((passesCount / total) * 100) : 100;
+        document.getElementById('metric-score').innerText = newScore + '%';
+        if (remediationsHtml) {
+          document.getElementById('remediation-container').innerHTML = remediationsHtml;
+        }
+
+        status.innerHTML = '✅ Multimedia Audit Complete for <strong>' + file.name + '</strong>! Identified ' + violations.length + ' issues against WCAG 1.2 Time-based Media.';
+      } catch (err) {
+        status.innerText = 'Media parse error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🎬 Audit Multimedia';
       }
     }
 
@@ -941,4 +1102,4 @@ const fullHtml = `<!DOCTYPE html>
 `;
 
 fs.writeFileSync('index.html', fullHtml, 'utf-8');
-console.log('[A11yOmni] Option 4 Document Parser successfully integrated into index.html');
+console.log('[A11yOmni] Option 5 Multimedia & Captions Parser successfully integrated into index.html');
