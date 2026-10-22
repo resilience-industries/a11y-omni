@@ -26,6 +26,10 @@ jobs:
           npm install
           node report-generator.js
 
+      - name: Inject Accessible Footer
+        run: |
+          sed -i 's|</body>|<script src="footer-injector.js"></script></body>|g' index.html
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
