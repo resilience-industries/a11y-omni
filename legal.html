@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legal & Privacy - A11yOmni Suite</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      background: #f8f9fa;
+      color: #212529;
+      margin: 0;
+      padding: 1rem;
+    }
+    .legal-container {
+      max-width: 800px;
+      margin: 1.5rem auto;
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      background: #0d6efd;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .back-btn:focus, .back-btn:hover {
+      outline: 3px solid #ffbf47;
+      background: #0b5ed7;
+    }
+    h1 { font-size: 1.8rem; margin-top: 0; color: #111; }
+    h2 { font-size: 1.3rem; margin-top: 1.5rem; color: #222; }
+    ul { padding-left: 1.2rem; }
+    li { margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <main class="legal-container" role="main">
+    <a href="index.html" class="back-btn" aria-label="Back to A11yOmni Home">← Back to Dashboard</a>
+    
+    <h1>Legal, Privacy & Compliance</h1>
+    <p><strong>Effective Date:</strong> October 2026</p>
+    <p><strong>Organization:</strong> Resilience Industries (A11yOmni Suite)</p>
+
+    <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #dee2e6;">
+
+    <section aria-labelledby="privacy-heading">
+      <h2 id="privacy-heading">1. Privacy Policy</h2>
+      <p>A11yOmni is dedicated to digital accessibility and user privacy:</p>
+      <ul>
+        <li><strong>Authentication Data:</strong> When you sign in with Google Auth, we only access basic profile details (name, email, avatar) to maintain your session and free credit balance.</li>
+        <li><strong>Audit Documents & URLs:</strong> Target web pages and uploaded test archives are analyzed purely in-memory or securely via Firebase Firestore for reporting. We do not sell or share your source code.</li>
+        <li><strong>Data Retention:</strong> Audit logs are linked to your authenticated user account and can be cleared at any time.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="terms-heading">
+      <h2 id="terms-heading">2. Terms of Service</h2>
+      <p>By using the A11yOmni Enterprise Engine, you agree to the following conditions:</p>
+      <ul>
+        <li><strong>Intended Purpose:</strong> This suite diagnoses accessibility barriers based on WCAG 2.1 (Level A, AA, AAA) and generates VPAT insights.</li>
+        <li><strong>Fair Usage:</strong> Users receive initial free credit allowances. Automated scraping or abuse of the engine is prohibited.</li>
+        <li><strong>Liability:</strong> While our diagnostics follow industry standards, client organizations remain responsible for their final manual compliance validation.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="support-heading">
+      <h2 id="support-heading">3. Support & Contact</h2>
+      <p>For custom enterprise plans or inquiries, contact our team:</p>
+      <p><strong>Contact Email:</strong> resilienceindustries.contact@gmail.com</p>
+      <p><strong>Hosted on:</strong> Google Cloud / Firebase Hosting</p>
+    </section>
+  </main>
+</body>
+</html>
